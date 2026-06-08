@@ -22,10 +22,15 @@ ALIASES = {
     "banco": "db",
     "help": "help",
     "ajuda": "help",
+    "guia": "help",
+    "comandos": "help",
     "--help": "help",
     "-h": "help",
     "paths": "paths",
     "caminhos": "paths",
+    "history": "history",
+    "historico": "history",
+    "histórico": "history",
     "version": "version",
     "--version": "version",
 }
@@ -40,8 +45,13 @@ Comandos rápidos:
   habits hoje|today         resumo rápido do dia
   habits streak|sequencia   ver sequências atuais
   habits db|banco           visualizar tabelas do banco
+  habits history|historico   ver histórico de um hábito
   habits paths|caminhos     mostrar caminhos do app
-  habits help|ajuda         este guia
+  habits help|ajuda|guia    este guia
+
+Exemplos:
+  habits check treinar
+  habits historico estudar
 """
 
 
@@ -61,7 +71,10 @@ def main(argv: list[str] | None = None) -> int:
         if command is None:
             menu.show_menu(console, conn)
         elif command == "check":
-            menu.register_flow(console, conn)
+            habit_id = None
+            if len(args) > 1:
+                habit_id = menu.select_habit_by_query(console, conn, " ".join(args[1:]), active=True)
+            menu.register_flow(console, conn, habit_id)
         elif command == "today":
             panels.print_today(console, conn)
         elif command == "streak":
@@ -70,10 +83,16 @@ def main(argv: list[str] | None = None) -> int:
             panels.print_db(console, conn)
         elif command == "paths":
             panels.print_paths(console)
+        elif command == "history":
+            habit_id = None
+            if len(args) > 1:
+                habit_id = menu.select_habit_by_query(console, conn, " ".join(args[1:]), active=None)
+            menu.history_flow(console, conn, habit_id)
         elif command == "version":
             console.print(f"Habits v{__version__}")
         else:
             console.print(HELP)
+            panels.print_guide(console)
             if list_habits(conn, active=True):
                 console.print("Dica: use [bold]habits hoje[/bold] para ver o resumo.")
     return 0

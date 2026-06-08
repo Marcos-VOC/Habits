@@ -74,6 +74,8 @@ def create_habit(
         raise ValueError("habit name is required")
     frequency = normalize_frequency(frequency_type)
     target = max(1, int(frequency_target or 1))
+    if frequency == "weekly" and target > 7:
+        raise ValueError("weekly frequency target must be between 1 and 7")
     cursor = conn.execute(
         """
         INSERT INTO habits (
@@ -105,10 +107,10 @@ def get_habit(conn: sqlite3.Connection, habit_id: int) -> dict[str, Any]:
 
 def list_habits(conn: sqlite3.Connection, *, active: bool | None = True) -> list[dict[str, Any]]:
     if active is None:
-        rows = conn.execute("SELECT * FROM habits ORDER BY active DESC, name COLLATE NOCASE").fetchall()
+        rows = conn.execute("SELECT * FROM habits ORDER BY active DESC, id ASC").fetchall()
     else:
         rows = conn.execute(
-            "SELECT * FROM habits WHERE active = ? ORDER BY name COLLATE NOCASE",
+            "SELECT * FROM habits WHERE active = ? ORDER BY id ASC",
             (1 if active else 0,),
         ).fetchall()
     return [row_to_dict(row) for row in rows]
@@ -117,6 +119,28 @@ def list_habits(conn: sqlite3.Connection, *, active: bool | None = True) -> list
 def archive_habit(conn: sqlite3.Connection, habit_id: int) -> None:
     conn.execute("UPDATE habits SET active = 0 WHERE id = ?", (habit_id,))
     conn.commit()
+
+
+def unarchive_habit(conn: sqlite3.Connection, habit_id: int) -> None:
+    conn.execute("UPDATE habits SET active = 1 WHERE id = ?", (habit_id,))
+    conn.commit()
+
+
+def find_habits(conn: sqlite3.Connection, query: str, *, active: bool | None = True) -> list[dict[str, Any]]:
+    clean_query = query.strip()
+    if not clean_query:
+        return []
+    params: list[Any] = []
+    where = "WHERE name LIKE ? COLLATE NOCASE"
+    params.append(f"%{clean_query}%")
+    if active is not None:
+        where += " AND active = ?"
+        params.append(1 if active else 0)
+    rows = conn.execute(
+        f"SELECT * FROM habits {where} ORDER BY name COLLATE NOCASE",
+        params,
+    ).fetchall()
+    return [row_to_dict(row) for row in rows]
 
 
 def register_entry(
@@ -172,6 +196,20 @@ def list_entries(conn: sqlite3.Connection, habit_id: int | None = None) -> list[
             "SELECT * FROM entries WHERE habit_id = ? ORDER BY date DESC",
             (habit_id,),
         ).fetchall()
+    return [row_to_dict(row) for row in rows]
+
+
+def habit_history(conn: sqlite3.Connection, habit_id: int) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT e.*, h.name AS habit_name, h.icon AS habit_icon
+        FROM entries e
+        JOIN habits h ON h.id = e.habit_id
+        WHERE e.habit_id = ?
+        ORDER BY e.date DESC
+        """,
+        (habit_id,),
+    ).fetchall()
     return [row_to_dict(row) for row in rows]
 
 

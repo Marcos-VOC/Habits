@@ -21,6 +21,8 @@ DEFAULT_COLOR = "azul"
 
 
 def normalize_color(value: str | None) -> str:
-    if value in PALETTE:
-        return value
+    if value:
+        normalized = value.strip().lower()
+        if normalized in PALETTE:
+            return normalized
     return DEFAULT_COLOR

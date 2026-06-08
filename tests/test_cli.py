@@ -12,3 +12,7 @@ def test_aliases():
     assert resolve_command(["db"]) == "db"
     assert resolve_command(["caminhos"]) == "paths"
     assert resolve_command(["paths"]) == "paths"
+    assert resolve_command(["historico"]) == "history"
+    assert resolve_command(["history"]) == "history"
+    assert resolve_command(["guia"]) == "help"
+    assert resolve_command(["comandos"]) == "help"

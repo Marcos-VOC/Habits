@@ -13,6 +13,9 @@ ensure_venv() {
     if [ ! -x "$VENV_DIR/bin/python" ]; then
         "$PYTHON" -m venv "$VENV_DIR"
     fi
+    if ! "$VENV_DIR/bin/python" -m pip --version >/dev/null 2>&1; then
+        "$VENV_DIR/bin/python" -m ensurepip --upgrade >/dev/null
+    fi
     "$VENV_DIR/bin/python" -m pip install --upgrade pip >/dev/null
 }
 

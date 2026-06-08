@@ -2,18 +2,33 @@
 
 Habits is a personal habit tracker for the terminal, built for Fedora/Linux with Python, Rich, and SQLite.
 
-The interface is in Portuguese, while the internal code, database, and config use English names.
+The user interface is in Portuguese. Internal code, database tables/columns, and config keys use English names.
 
-## v0.1
+## Features
 
-- Interactive Rich menu.
-- Create, list, and archive habits.
+- Interactive terminal menu with Rich.
+- First-steps menu when no habits exist yet.
+- Dynamic menus that hide actions that cannot be used in the current data state.
+- Create, list, archive, and unarchive habits.
+- Suggested icons during habit creation, while still allowing any emoji supported by the terminal.
 - Register one entry per habit per day with optional duration and note.
 - Current streaks for daily, weekdays, and weekly habits.
+- Habit-specific history view.
 - Quick commands with Portuguese and English aliases.
-- SQLite database viewer.
-- Paths viewer.
+- Direct commands by habit name, such as `habits check treinar`.
+- SQLite technical viewer through `habits db`.
+- Command guide through `habits guia`.
+- Paths viewer for database/config locations.
 - Local user install/uninstall through `run.sh`.
+
+## Important Rules
+
+- `Todos os dias` means one expected completion per calendar day.
+- `Segunda a sexta` ignores Saturday and Sunday for streak calculation.
+- `X vezes por semana` accepts a weekly target from 1 to 7.
+- Habits stores at most one entry per habit per date.
+- Confirmations use `S`/`N`.
+- Color input is case-insensitive, so `azul`, `Azul`, and `AZUL` resolve to the same color.
 
 ## Install
 
@@ -27,7 +42,22 @@ This installs the `habits` command for the current user at:
 ~/.local/bin/habits
 ```
 
+Uninstall asks whether to keep or remove user data:
+
+```bash
+./run.sh uninstall
+```
+
 ## Run
+
+During development, you can run without installing:
+
+```bash
+./run.sh
+./run.sh hoje
+```
+
+After installing:
 
 ```bash
 habits
@@ -35,19 +65,18 @@ habits hoje
 habits today
 habits check
 habits registrar
+habits check treinar
 habits streak
 habits sequencia
+habits history
+habits historico
+habits historico estudar
+habits guia
+habits comandos
 habits db
 habits banco
 habits paths
 habits caminhos
-```
-
-During development, you can run without installing:
-
-```bash
-./run.sh
-./run.sh hoje
 ```
 
 ## Data
@@ -59,16 +88,54 @@ Habits stores user data in standard Linux user directories:
 ~/.config/habits/config.json
 ```
 
-Uninstall asks whether to keep or remove these files:
+Tests and development may override those paths:
 
 ```bash
-./run.sh uninstall
+HABITS_DB_PATH=/tmp/habits-test.db HABITS_CONFIG_PATH=/tmp/habits-config.json ./run.sh
 ```
 
-## Tests
+## Development
+
+Runtime dependency:
+
+```text
+rich
+```
+
+Development/test dependency:
+
+```text
+pytest
+```
+
+Run tests:
 
 ```bash
 ./run.sh test
 ```
 
 Tests use temporary paths and do not touch your real Habits data.
+
+## Project Layout
+
+```text
+src/habits/
+  main.py          CLI routing
+  db.py            SQLite connection and schema
+  models.py        CRUD and data access
+  stats.py         streak calculations
+  config.py        user config
+  palette.py       color palette
+  paths.py         data/config paths
+  ui/              Rich terminal UI
+tests/             pytest suite
+```
+
+## Roadmap
+
+- Edit habits.
+- Delete habits with strong confirmation.
+- Improve icon selector by category.
+- Add advanced statistics.
+- Add charts.
+- Add GTK/libadwaita UI later.

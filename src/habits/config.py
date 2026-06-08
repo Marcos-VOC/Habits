@@ -11,7 +11,6 @@ DEFAULT_CONFIG = {
     "streak_alert_minimum": 5,
     "default_color": "azul",
     "user_name": "Marcos",
-    "show_greeting": True,
     "terminal_theme": "escuro",
 }
 
@@ -27,9 +26,6 @@ def _validate(raw: dict[str, Any]) -> dict[str, Any]:
 
     if isinstance(raw.get("user_name"), str) and raw["user_name"].strip():
         config["user_name"] = raw["user_name"].strip()
-
-    if isinstance(raw.get("show_greeting"), bool):
-        config["show_greeting"] = raw["show_greeting"]
 
     if raw.get("terminal_theme") in {"escuro", "claro"}:
         config["terminal_theme"] = raw["terminal_theme"]
