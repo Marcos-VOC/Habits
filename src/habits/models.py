@@ -98,6 +98,57 @@ def create_habit(
     return get_habit(conn, cursor.lastrowid)
 
 
+def update_habit(
+    conn: sqlite3.Connection,
+    habit_id: int,
+    *,
+    name: str | None = None,
+    icon: str | None = None,
+    color: str | None = None,
+    daily_goal_minutes: int | None = None,
+    clear_daily_goal: bool = False,
+    frequency_type: str | None = None,
+    frequency_target: int | None = None,
+) -> dict[str, Any]:
+    habit = get_habit(conn, habit_id)
+
+    next_name = habit["name"] if name is None else name.strip()
+    if not next_name:
+        raise ValueError("habit name is required")
+
+    next_icon = habit["icon"] if icon is None else ((icon or "⭐").strip() or "⭐")
+    next_color = habit["color"] if color is None else normalize_color(color)
+    next_frequency = habit["frequency_type"] if frequency_type is None else normalize_frequency(frequency_type)
+    next_target = habit["frequency_target"] if frequency_target is None else max(1, int(frequency_target or 1))
+    if next_frequency == "weekly" and next_target > 7:
+        raise ValueError("weekly frequency target must be between 1 and 7")
+    if next_frequency != "weekly":
+        next_target = 1
+
+    if clear_daily_goal:
+        next_goal = None
+    elif daily_goal_minutes is None:
+        next_goal = habit["daily_goal_minutes"]
+    else:
+        next_goal = daily_goal_minutes
+
+    conn.execute(
+        """
+        UPDATE habits
+        SET name = ?,
+            icon = ?,
+            color = ?,
+            daily_goal_minutes = ?,
+            frequency_type = ?,
+            frequency_target = ?
+        WHERE id = ?
+        """,
+        (next_name, next_icon, next_color, next_goal, next_frequency, next_target, habit_id),
+    )
+    conn.commit()
+    return get_habit(conn, habit_id)
+
+
 def get_habit(conn: sqlite3.Connection, habit_id: int) -> dict[str, Any]:
     row = conn.execute("SELECT * FROM habits WHERE id = ?", (habit_id,)).fetchone()
     if row is None:

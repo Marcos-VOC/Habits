@@ -6,16 +6,17 @@ import sys
 from rich.console import Console
 from rich.prompt import Prompt
 
+from habits import backup
 from habits import models
 from habits.config import load_config, reset_config, save_config
 from habits.palette import PALETTE, normalize_color
 from habits.ui import panels
+from habits.ui.icons import ICON_CATEGORIES
 from habits.ui.labels import frequency_label
 from habits.ui.welcome import show_welcome
 
 
 LEFT_MARGIN = 2
-ICON_SUGGESTIONS = ["⭐", "📘", "🏋️", "🧘", "💧", "🏃", "🧠", "🎯", "🎸", "🌱"]
 
 
 def _clear_terminal(console: Console, *, scrollback: bool = False) -> None:
@@ -229,26 +230,30 @@ def select_habit_by_query(
 
 def _ask_required_text(console: Console, label: str, *, cancel_text: str = "n") -> str | None:
     while True:
-        value = Prompt.ask(label).strip()
+        value = _ask_boxed_text(console, label, transient=True).strip()
         if value:
+            console.print(" " * LEFT_MARGIN + f"[green]{label}: {value}[/green]")
             return value
-        console.print(f"[red]{label} não pode ficar vazio.[/red]")
-        retry = Prompt.ask("Pressione Enter para tentar novamente ou N para cancelar", default="")
+        console.print(" " * LEFT_MARGIN + f"[red]{label} não pode ficar vazio.[/red]")
+        retry = _ask_boxed_text(console, "Enter tenta novamente ou N cancela", transient=True)
         if retry.strip().lower() == cancel_text:
             return None
 
 
 def _ask_optional_minutes(console: Console, label: str) -> int | None:
     while True:
-        value = Prompt.ask(label, default="").strip()
+        value = _ask_boxed_text(console, label, transient=True).strip()
         if not value:
+            console.print(" " * LEFT_MARGIN + "[green]Meta diária: sem meta[/green]")
             return None
         if value.isdigit():
-            return int(value)
-        console.print("[red]Informe um número inteiro de minutos ou deixe vazio.[/red]")
+            minutes = int(value)
+            console.print(" " * LEFT_MARGIN + f"[green]Meta diária: {minutes} min[/green]")
+            return minutes
+        console.print(" " * LEFT_MARGIN + "[red]Informe um número inteiro de minutos ou deixe vazio.[/red]")
 
 
-def _ask_frequency(console: Console) -> str:
+def _ask_frequency(console: Console, default: str = "daily") -> str:
     _print_options_panel(
         console,
         [
@@ -257,7 +262,8 @@ def _ask_frequency(console: Console) -> str:
             "3. X vezes por semana",
         ],
     )
-    choice = _ask_panel_choice(console, ["1", "2", "3"], "1", transient=True)
+    default_choice = {"daily": "1", "weekdays": "2", "weekly": "3"}.get(default, "1")
+    choice = _ask_panel_choice(console, ["1", "2", "3"], default_choice, transient=True)
     frequency = {"1": "daily", "2": "weekdays", "3": "weekly"}[choice]
     console.print(" " * LEFT_MARGIN + f"[green]Frequência: {frequency_label(frequency)}[/green]")
     return frequency
@@ -273,10 +279,47 @@ def _ask_weekly_target(console: Console) -> int:
         console.print(" " * LEFT_MARGIN + "[red]A meta semanal deve ficar entre 1 e 7.[/red]")
 
 
-def _ask_icon(console: Console) -> str:
-    console.print("Sugestões de ícones: " + "  ".join(ICON_SUGGESTIONS))
-    console.print("[dim]Você pode digitar qualquer emoji ou caractere curto que seu terminal suporte.[/dim]")
-    return Prompt.ask("Ícone", default="⭐").strip() or "⭐"
+def _ask_color(console: Console, default: str = "azul") -> str:
+    console.print(" " * LEFT_MARGIN + "Cores: " + ", ".join(PALETTE))
+    while True:
+        value = _ask_boxed_text(console, "Cor", default=default, transient=True)
+        raw_color = value.strip().lower()
+        if raw_color in PALETTE:
+            normalized = normalize_color(raw_color)
+            console.print(" " * LEFT_MARGIN + f"[green]Cor: {normalized}[/green]")
+            return normalized
+        console.print(" " * LEFT_MARGIN + "[red]Cor não reconhecida. Escolha uma cor da lista.[/red]")
+
+
+def _ask_icon(console: Console, default: str = "⭐") -> str:
+    while True:
+        category_options = [f"{name}" for name, _ in ICON_CATEGORIES]
+        category_options.extend(["Digitar manualmente", "Voltar"])
+        _print_options_panel(
+            console,
+            [f"{index}. {label}" for index, label in enumerate(category_options, start=1)],
+        )
+        choices = [str(index) for index in range(1, len(category_options) + 1)]
+        choice = _ask_panel_choice(console, choices, choices[-2], transient=True)
+        selected = category_options[int(choice) - 1]
+        if selected == "Voltar":
+            console.print(" " * LEFT_MARGIN + f"[green]Ícone: {default}[/green]")
+            return default
+        if selected == "Digitar manualmente":
+            icon = _ask_boxed_text(console, "Ícone", default=default, transient=True).strip() or default
+            console.print(" " * LEFT_MARGIN + f"[green]Ícone: {icon}[/green]")
+            return icon
+
+        _, icons = ICON_CATEGORIES[int(choice) - 1]
+        _print_options_panel(
+            console,
+            [f"{index}. {emoji} {label}" for index, (emoji, label) in enumerate(icons, start=1)],
+        )
+        icon_choices = [str(index) for index in range(1, len(icons) + 1)]
+        icon_choice = _ask_panel_choice(console, icon_choices, "1", transient=True)
+        icon = icons[int(icon_choice) - 1][0]
+        console.print(" " * LEFT_MARGIN + f"[green]Ícone: {icon}[/green]")
+        return icon
 
 
 def create_habit_flow(console: Console, conn: sqlite3.Connection) -> None:
@@ -285,14 +328,12 @@ def create_habit_flow(console: Console, conn: sqlite3.Connection) -> None:
         console.print("[yellow]Criação cancelada.[/yellow]")
         return
     icon = _ask_icon(console)
-    console.print("Cores: " + ", ".join(PALETTE))
-    color = Prompt.ask("Cor", default="azul")
+    color = _ask_color(console, "azul")
     frequency = _ask_frequency(console)
     target = 1
     if frequency == "weekly":
         target = _ask_weekly_target(console)
     goal = _ask_optional_minutes(console, "Meta diária em minutos (opcional)")
-    color = normalize_color(color)
     console.print()
     console.print("Confirme os dados do hábito:")
     console.print(f"Nome: {name}")
@@ -382,6 +423,109 @@ def delete_habit_flow(console: Console, conn: sqlite3.Connection) -> None:
     console.print("[green]Hábito apagado definitivamente.[/green]")
 
 
+def edit_habit_flow(console: Console, conn: sqlite3.Connection) -> None:
+    habit_id = _select_habit(console, conn, active=None)
+    if habit_id is None:
+        return
+
+    while True:
+        habit = models.get_habit(conn, habit_id)
+        _render_screen(console, conn, f'Editar hábito - {habit["icon"]} {habit["name"]}')
+        _print_options_panel(
+            console,
+            [
+                f'1. Nome: {habit["name"]}',
+                f'2. Ícone: {habit["icon"]}',
+                f'3. Cor: {habit["color"]}',
+                f'4. Frequência: {frequency_label(habit["frequency_type"])}',
+                f'5. Meta diária: {habit["daily_goal_minutes"] or "sem meta"}',
+                "6. Voltar",
+            ],
+        )
+        choice = _ask_panel_choice(console, ["1", "2", "3", "4", "5", "6"], "6")
+        if choice == "1":
+            new_name = _ask_required_text(console, "Novo nome")
+            if new_name is None:
+                console.print(" " * LEFT_MARGIN + "[yellow]Alteração cancelada.[/yellow]")
+                _pause(console)
+                continue
+            console.print(" " * LEFT_MARGIN + f"[green]Novo nome: {new_name}[/green]")
+            if _confirm_pt(console, "Salvar novo nome?", default=True):
+                models.update_habit(conn, habit_id, name=new_name)
+                console.print(" " * LEFT_MARGIN + "[green]Nome atualizado.[/green]")
+            _pause(console)
+        elif choice == "2":
+            new_icon = _ask_icon(console, default=habit["icon"])
+            if _confirm_pt(console, "Salvar novo ícone?", default=True):
+                models.update_habit(conn, habit_id, icon=new_icon)
+                console.print(" " * LEFT_MARGIN + "[green]Ícone atualizado.[/green]")
+            _pause(console)
+        elif choice == "3":
+            new_color = _ask_color(console, habit["color"])
+            if _confirm_pt(console, "Salvar nova cor?", default=True):
+                models.update_habit(conn, habit_id, color=new_color)
+                console.print(" " * LEFT_MARGIN + "[green]Cor atualizada.[/green]")
+            _pause(console)
+        elif choice == "4":
+            new_frequency = _ask_frequency(console, habit["frequency_type"])
+            new_target = 1
+            if new_frequency == "weekly":
+                new_target = _ask_weekly_target(console)
+            if _confirm_pt(console, "Salvar nova frequência?", default=True):
+                models.update_habit(
+                    conn,
+                    habit_id,
+                    frequency_type=new_frequency,
+                    frequency_target=new_target,
+                )
+                console.print(" " * LEFT_MARGIN + "[green]Frequência atualizada.[/green]")
+            _pause(console)
+        elif choice == "5":
+            new_goal = _ask_optional_minutes(console, "Nova meta diária em minutos (vazio remove)")
+            if _confirm_pt(console, "Salvar nova meta diária?", default=True):
+                if new_goal is None:
+                    models.update_habit(conn, habit_id, clear_daily_goal=True)
+                else:
+                    models.update_habit(conn, habit_id, daily_goal_minutes=new_goal)
+                console.print(" " * LEFT_MARGIN + "[green]Meta diária atualizada.[/green]")
+            _pause(console)
+        else:
+            return
+
+
+def backup_export_flow(console: Console, conn: sqlite3.Connection) -> None:
+    while True:
+        _render_screen(console, conn, "Backup e exportação")
+        _print_options_panel(
+            console,
+            [
+                "1. Criar backup completo",
+                "2. Exportar JSON",
+                "3. Exportar CSV",
+                "4. Voltar",
+            ],
+        )
+        choice = _ask_panel_choice(console, ["1", "2", "3", "4"], "4")
+        try:
+            if choice == "1":
+                path = backup.create_complete_backup()
+                console.print(" " * LEFT_MARGIN + f"[green]Backup criado em:[/green] {path}")
+                _pause(console)
+            elif choice == "2":
+                path = backup.export_json(conn)
+                console.print(" " * LEFT_MARGIN + f"[green]JSON exportado em:[/green] {path}")
+                _pause(console)
+            elif choice == "3":
+                path = backup.export_csv(conn)
+                console.print(" " * LEFT_MARGIN + f"[green]CSV exportado em:[/green] {path}")
+                _pause(console)
+            else:
+                return
+        except OSError as exc:
+            console.print(" " * LEFT_MARGIN + f"[red]Não consegui salvar o arquivo: {exc}[/red]")
+            _pause(console)
+
+
 def manage_flow(console: Console, conn: sqlite3.Connection) -> None:
     while True:
         active_habits = models.list_habits(conn, active=True)
@@ -403,6 +547,7 @@ def manage_flow(console: Console, conn: sqlite3.Connection) -> None:
                 ]
             )
         if all_habits:
+            actions.append(("edit", "Editar hábito"))
             actions.append(("history", "Histórico por hábito"))
             actions.append(("delete", "Apagar hábito"))
         actions.append(("back", "Voltar"))
@@ -443,6 +588,9 @@ def manage_flow(console: Console, conn: sqlite3.Connection) -> None:
                 models.unarchive_habit(conn, habit_id)
                 console.print("[green]Hábito desarquivado.[/green]")
             _pause(console)
+        elif action == "edit":
+            _render_screen(console, conn, "Editar hábito")
+            edit_habit_flow(console, conn)
         elif action == "history":
             _render_screen(console, conn, "Histórico por hábito")
             history_flow(console, conn, interactive=True)
@@ -463,21 +611,25 @@ def config_flow(console: Console, conn: sqlite3.Connection) -> None:
             [
                 f'1. Nome: {config["user_name"]}',
                 f'2. Cor padrão: {config["default_color"]}',
-                "3. Resetar configuração",
-                "4. Voltar",
+                "3. Backup e exportação",
+                "4. Resetar configuração",
+                "5. Voltar",
             ],
         )
         console.print()
         panels.print_paths(console)
-        choice = _ask_panel_choice(console, ["1", "2", "3", "4"], "4")
+        choice = _ask_panel_choice(console, ["1", "2", "3", "4", "5"], "5")
         if choice == "1":
-            config["user_name"] = Prompt.ask("Novo nome", default=config["user_name"])
-            save_config(config)
+            new_name = _ask_required_text(console, "Novo nome")
+            if new_name is not None:
+                config["user_name"] = new_name
+                save_config(config)
         elif choice == "2":
-            console.print("Cores: " + ", ".join(PALETTE))
-            config["default_color"] = Prompt.ask("Cor", default=config["default_color"])
+            config["default_color"] = _ask_color(console, config["default_color"])
             save_config(config)
         elif choice == "3":
+            backup_export_flow(console, conn)
+        elif choice == "4":
             if _confirm_pt(console, "Resetar configuração?", default=False):
                 config = reset_config()
         else:

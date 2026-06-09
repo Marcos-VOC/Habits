@@ -9,11 +9,12 @@ The user interface is in Portuguese. Internal code, database tables/columns, and
 - Interactive terminal menu with Rich.
 - First-steps menu when no habits exist yet.
 - Dynamic menus that hide actions that cannot be used in the current data state.
-- Create, list, archive, unarchive, and delete habits.
-- Suggested icons during habit creation, while still allowing any emoji supported by the terminal.
+- Create, edit, list, archive, unarchive, and delete habits.
+- Icon picker by category, while still allowing any emoji supported by the terminal.
 - Register one entry per habit per day with optional duration and note.
 - Current streaks for daily, weekdays, and weekly habits.
 - Habit-specific history view.
+- Backup/export flow in settings, with complete backup, JSON export, and CSV export.
 - Quick commands with Portuguese and English aliases.
 - Direct commands by habit name, such as `habits check treinar`.
 - SQLite technical viewer through `habits db` or `habits banco`.
@@ -96,6 +97,18 @@ Tests and development may override those paths:
 HABITS_DB_PATH=/tmp/habits-test.db HABITS_CONFIG_PATH=/tmp/habits-config.json ./run.sh
 ```
 
+Backups and exports are saved by default under:
+
+```text
+~/Downloads/habits-backups/
+```
+
+Tests and development may override that directory:
+
+```bash
+HABITS_BACKUP_DIR=/tmp/habits-backups ./run.sh
+```
+
 ## Development
 
 Runtime dependency:
@@ -126,6 +139,7 @@ src/habits/
   db.py            SQLite connection and schema
   models.py        CRUD and data access
   stats.py         streak calculations
+  backup.py        backup and export helpers
   config.py        user config
   palette.py       color palette
   paths.py         data/config paths
@@ -135,8 +149,7 @@ tests/             pytest suite
 
 ## Roadmap
 
-- Edit habits.
-- Improve icon selector by category.
 - Add advanced statistics.
+- Add advanced alerts.
 - Add charts.
 - Add GTK/libadwaita UI later.

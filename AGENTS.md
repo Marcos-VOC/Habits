@@ -47,15 +47,23 @@
 - Basic config management.
 - Basic tests from the beginning.
 
+## v0.2 Scope
+
+- Edit habit name, icon, color, frequency, and daily goal from the interactive manager.
+- Icon picker organized by numbered categories, with manual emoji entry still available.
+- Backup/export flow inside settings:
+  - Complete backup copies the database and config.
+  - JSON export includes config, habits, and entries.
+  - CSV export writes `habits.csv` and `entries.csv`.
+- Backup/export files default to `~/Downloads/habits-backups/`.
+- Tests and development may override backup/export output with `HABITS_BACKUP_DIR`.
+
 ## Deferred
 
-- Edit habits.
 - Matplotlib charts.
 - GTK 4/libadwaita UI.
 - Advanced alerts.
 - Advanced statistics.
-- Backup/export.
-- Visual mascot/icons and richer icon picker.
 
 ## Behavior Decisions
 
@@ -96,3 +104,7 @@
 - Sequential boxed inputs should be transient: after Enter, the active input box disappears and a simple confirmation line remains before the next input appears.
 - In habit creation, boxed inputs such as frequency and weekly target should also be transient; only the current active input keeps a green border.
 - User-facing habit selection should use sequential visual numbers (`Nº`) mapped internally to stable database IDs. Real IDs are technical and should remain visible only in database/debug views.
+- Editing a habit changes future presentation and rules, but does not rewrite old entries.
+- Editing a frequency should ask for a new weekly target only when the new frequency is `weekly`.
+- Empty daily goal during editing means the daily goal should be removed.
+- Backup/export belongs inside settings, while the paths table remains visible directly on the settings screen.

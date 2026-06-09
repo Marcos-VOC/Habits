@@ -46,6 +46,47 @@ def test_weekly_frequency_target_cannot_exceed_week_days(conn):
         raise AssertionError("expected ValueError")
 
 
+def test_update_habit_changes_editable_fields(conn):
+    habit = models.create_habit(conn, "Ler", icon="📘", color="azul", daily_goal_minutes=20)
+
+    updated = models.update_habit(
+        conn,
+        habit["id"],
+        name="Estudar",
+        icon="🧠",
+        color="VERDE",
+        frequency_type="weekly",
+        frequency_target=3,
+        daily_goal_minutes=45,
+    )
+
+    assert updated["name"] == "Estudar"
+    assert updated["icon"] == "🧠"
+    assert updated["color"] == "verde"
+    assert updated["frequency_type"] == "weekly"
+    assert updated["frequency_target"] == 3
+    assert updated["daily_goal_minutes"] == 45
+
+
+def test_update_habit_can_clear_daily_goal(conn):
+    habit = models.create_habit(conn, "Ler", daily_goal_minutes=20)
+
+    updated = models.update_habit(conn, habit["id"], clear_daily_goal=True)
+
+    assert updated["daily_goal_minutes"] is None
+
+
+def test_update_weekly_frequency_target_cannot_exceed_week_days(conn):
+    habit = models.create_habit(conn, "Correr")
+
+    try:
+        models.update_habit(conn, habit["id"], frequency_type="weekly", frequency_target=9)
+    except ValueError as exc:
+        assert "between 1 and 7" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
+
+
 def test_register_entry_updates_same_day(conn):
     habit = models.create_habit(conn, "Estudar")
 
