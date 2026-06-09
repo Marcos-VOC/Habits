@@ -51,7 +51,14 @@ def _print_options_panel(console: Console, options: list[str]) -> None:
     console.print("\n".join(prefix + option for option in options))
 
 
-def _ask_panel_choice(console: Console, choices: list[str], default: str) -> str:
+def _ask_panel_choice(
+    console: Console,
+    choices: list[str],
+    default: str,
+    *,
+    allow_commands: bool = False,
+    transient: bool = False,
+) -> str:
     warning: str | None = None
     while True:
         width = _menu_panel_width(console)
@@ -73,18 +80,26 @@ def _ask_panel_choice(console: Console, choices: list[str], default: str) -> str
         sys.stdout.write(f"\033[2A\r\033[{LEFT_MARGIN + len('│ ' + label) + 1}C")
         sys.stdout.flush()
         value = input().strip() or default
-        sys.stdout.write("\033[1B\r")
-        sys.stdout.flush()
 
         if value in choices:
+            sys.stdout.write("\033[2A\r\033[J" if transient else "\033[1B\r")
+            sys.stdout.flush()
             return value
-        lines_to_clear = 4 if warning else 3
-        sys.stdout.write(f"\033[{lines_to_clear}A\033[J")
+        if allow_commands and any(character.isalpha() for character in value):
+            sys.stdout.write("\033[2A\r\033[J" if transient else "\033[1B\r")
+            sys.stdout.flush()
+            return value
+        if transient:
+            sys.stdout.write("\033[2A\r\033[J")
+        else:
+            sys.stdout.write("\033[1B\r")
+            lines_to_clear = 4 if warning else 3
+            sys.stdout.write(f"\033[{lines_to_clear}A\033[J")
         sys.stdout.flush()
         warning = "Escolha inválida."
 
 
-def _ask_boxed_text(console: Console, label: str, *, default: str = "") -> str:
+def _ask_boxed_text(console: Console, label: str, *, default: str = "", transient: bool = False) -> str:
     width = _menu_panel_width(console)
     inner_width = max(12, width - 4)
     suffix = f" ({default}): " if default else ": "
@@ -103,7 +118,10 @@ def _ask_boxed_text(console: Console, label: str, *, default: str = "") -> str:
     sys.stdout.write(f"\033[2A\r\033[{LEFT_MARGIN + len('│ ' + prompt) + 1}C")
     sys.stdout.flush()
     value = input().strip()
-    sys.stdout.write("\033[1B\r")
+    if transient:
+        sys.stdout.write("\033[2A\r\033[J")
+    else:
+        sys.stdout.write("\033[1B\r")
     sys.stdout.flush()
     return value or default
 
@@ -111,10 +129,13 @@ def _ask_boxed_text(console: Console, label: str, *, default: str = "") -> str:
 def _confirm_pt(console: Console, message: str, *, default: bool = False) -> bool:
     default_text = "S" if default else "N"
     while True:
-        value = _ask_boxed_text(console, f"{message} [S/N]", default=default_text).strip().lower()
+        raw_value = _ask_boxed_text(console, f"{message} [S/N]", default=default_text, transient=True).strip()
+        value = raw_value.lower()
         if value in {"s", "sim"}:
+            console.print(" " * LEFT_MARGIN + "[green]Confirmação: S[/green]")
             return True
         if value in {"n", "nao", "não"}:
+            console.print(" " * LEFT_MARGIN + "[yellow]Confirmação: N[/yellow]")
             return False
         console.print(" " * LEFT_MARGIN + "[red]Responda com S ou N.[/red]")
 
@@ -151,18 +172,21 @@ def _select_habit(console: Console, conn: sqlite3.Connection, *, active: bool | 
         _empty_state(console, "Nenhum hábito encontrado.")
         return None
     panels.print_habits(console, conn, active=active)
-    raw_id = Prompt.ask("ID do hábito, ou Enter para voltar", default="").strip()
-    if not raw_id:
+    raw_number = _ask_boxed_text(console, "Número do hábito, ou Enter para voltar", transient=True).strip()
+    if not raw_number:
         return None
-    if not raw_id.isdigit():
-        console.print("[red]ID inválido.[/red]")
+    if not raw_number.isdigit():
+        console.print("[red]Número inválido.[/red]")
         _pause(console)
         return None
-    habit_id = int(raw_id)
-    if not any(habit["id"] == habit_id for habit in habits):
+    habit_number = int(raw_number)
+    if not 1 <= habit_number <= len(habits):
         console.print("[red]Hábito não encontrado.[/red]")
         _pause(console)
         return None
+    habit = habits[habit_number - 1]
+    habit_id = int(habit["id"])
+    console.print(" " * LEFT_MARGIN + f'[green]Hábito selecionado: {habit_number}. {habit["name"]}[/green]')
     return habit_id
 
 
@@ -173,20 +197,23 @@ def _select_habit_from_matches(console: Console, matches: list[dict]) -> int | N
     if len(matches) == 1:
         return int(matches[0]["id"])
     console.print("[yellow]Encontrei mais de um hábito. Escolha qual usar:[/yellow]")
-    for habit in matches:
-        console.print(f'{habit["id"]}. {habit["icon"]} {habit["name"]}')
-    raw_id = Prompt.ask("ID do hábito, ou Enter para cancelar", default="").strip()
-    if not raw_id:
+    for index, habit in enumerate(matches, start=1):
+        console.print(f'{index}. {habit["icon"]} {habit["name"]}')
+    raw_number = _ask_boxed_text(console, "Número do hábito, ou Enter para cancelar", transient=True).strip()
+    if not raw_number:
         return None
-    if not raw_id.isdigit():
-        console.print("[red]ID inválido.[/red]")
+    if not raw_number.isdigit():
+        console.print("[red]Número inválido.[/red]")
         _pause(console)
         return None
-    habit_id = int(raw_id)
-    if not any(habit["id"] == habit_id for habit in matches):
-        console.print("[red]ID fora da lista encontrada.[/red]")
+    habit_number = int(raw_number)
+    if not 1 <= habit_number <= len(matches):
+        console.print("[red]Número fora da lista encontrada.[/red]")
         _pause(console)
         return None
+    habit = matches[habit_number - 1]
+    habit_id = int(habit["id"])
+    console.print(" " * LEFT_MARGIN + f'[green]Hábito selecionado: {habit_number}. {habit["name"]}[/green]')
     return habit_id
 
 
@@ -230,15 +257,19 @@ def _ask_frequency(console: Console) -> str:
             "3. X vezes por semana",
         ],
     )
-    choice = _ask_panel_choice(console, ["1", "2", "3"], "1")
-    return {"1": "daily", "2": "weekdays", "3": "weekly"}[choice]
+    choice = _ask_panel_choice(console, ["1", "2", "3"], "1", transient=True)
+    frequency = {"1": "daily", "2": "weekdays", "3": "weekly"}[choice]
+    console.print(" " * LEFT_MARGIN + f"[green]Frequência: {frequency_label(frequency)}[/green]")
+    return frequency
 
 
 def _ask_weekly_target(console: Console) -> int:
     while True:
-        value = _ask_boxed_text(console, "Quantas vezes por semana? 1-7", default="3")
+        value = _ask_boxed_text(console, "Quantas vezes por semana? 1-7", default="3", transient=True)
         if value.isdigit() and 1 <= int(value) <= 7:
-            return int(value)
+            target = int(value)
+            console.print(" " * LEFT_MARGIN + f"[green]Meta semanal: {target}[/green]")
+            return target
         console.print(" " * LEFT_MARGIN + "[red]A meta semanal deve ficar entre 1 e 7.[/red]")
 
 
@@ -290,20 +321,21 @@ def create_habit_flow(console: Console, conn: sqlite3.Connection) -> None:
     console.print(f'[green]Hábito criado:[/green] {habit["icon"]} {habit["name"]}')
 
 
-def register_flow(console: Console, conn: sqlite3.Connection, habit_id: int | None = None) -> None:
+def register_flow(console: Console, conn: sqlite3.Connection, habit_id: int | None = None) -> bool:
     habit_id = habit_id or _select_habit(console, conn)
     if habit_id is None:
-        return
+        return False
     if models.entry_exists(conn, habit_id) and not _confirm_pt(console, "Este hábito já foi registrado hoje. Atualizar?", default=False):
-        return
+        return True
     duration = Prompt.ask("Duração opcional (90, 90min, 1h, 1h30)", default="")
     note = Prompt.ask("Nota opcional", default="")
     try:
         entry = models.register_entry(conn, habit_id, duration_minutes=duration, note=note)
     except ValueError as exc:
         console.print(f"[red]Duração inválida. Use formatos como 90, 90min, 1h ou 1h30.[/red]")
-        return
+        return True
     console.print(f'[green]Registro salvo para {entry["date"]}.[/green]')
+    return True
 
 
 def history_flow(
@@ -330,6 +362,26 @@ def history_flow(
     panels.print_habit_history(console, conn, habit_id)
 
 
+def delete_habit_flow(console: Console, conn: sqlite3.Connection) -> None:
+    habit_id = _select_habit(console, conn, active=None)
+    if habit_id is None:
+        return
+    habit = models.get_habit(conn, habit_id)
+    console.print()
+    console.print("[red]Atenção: apagar é definitivo e remove todo o histórico deste hábito.[/red]")
+    console.print(f'Hábito selecionado: {habit["icon"]} {habit["name"]}')
+    typed_name = _ask_boxed_text(console, "Digite o nome exato para confirmar", transient=True)
+    if typed_name != habit["name"]:
+        console.print("[yellow]Nome diferente. Exclusão cancelada.[/yellow]")
+        return
+    console.print(" " * LEFT_MARGIN + f"[green]Nome confirmado: {typed_name}[/green]")
+    if not _confirm_pt(console, "Apagar definitivamente?", default=False):
+        console.print("[yellow]Exclusão cancelada.[/yellow]")
+        return
+    models.delete_habit(conn, habit_id)
+    console.print("[green]Hábito apagado definitivamente.[/green]")
+
+
 def manage_flow(console: Console, conn: sqlite3.Connection) -> None:
     while True:
         active_habits = models.list_habits(conn, active=True)
@@ -352,6 +404,7 @@ def manage_flow(console: Console, conn: sqlite3.Connection) -> None:
             )
         if all_habits:
             actions.append(("history", "Histórico por hábito"))
+            actions.append(("delete", "Apagar hábito"))
         actions.append(("back", "Voltar"))
         choices = [str(index) for index in range(1, len(actions) + 1)]
         default_choice = choices[-1]
@@ -393,6 +446,10 @@ def manage_flow(console: Console, conn: sqlite3.Connection) -> None:
         elif action == "history":
             _render_screen(console, conn, "Histórico por hábito")
             history_flow(console, conn, interactive=True)
+        elif action == "delete":
+            _render_screen(console, conn, "Apagar hábito")
+            delete_habit_flow(console, conn)
+            _pause(console)
         else:
             return
 
@@ -410,6 +467,8 @@ def config_flow(console: Console, conn: sqlite3.Connection) -> None:
                 "4. Voltar",
             ],
         )
+        console.print()
+        panels.print_paths(console)
         choice = _ask_panel_choice(console, ["1", "2", "3", "4"], "4")
         if choice == "1":
             config["user_name"] = Prompt.ask("Novo nome", default=config["user_name"])
@@ -432,35 +491,80 @@ def empty_database_menu(console: Console, conn: sqlite3.Connection) -> bool:
         console,
         [
             "1. Criar hábito",
-            "2. Banco de dados",
-            "3. Guia de comandos",
-            "4. Caminhos",
-            "5. Configurações",
-            "6. Sair",
+            "2. Guia de comandos",
+            "3. Configurações",
+            "4. Sair",
         ],
     )
-    choice = _ask_panel_choice(console, ["1", "2", "3", "4", "5", "6"], "1")
+    choice = _ask_panel_choice(console, ["1", "2", "3", "4"], "1")
     if choice == "1":
         _render_screen(console, conn, "Criar hábito")
         create_habit_flow(console, conn)
         _pause(console)
     elif choice == "2":
-        _render_screen(console, conn, "Banco de dados")
-        panels.print_db(console, conn)
-        _pause(console)
-    elif choice == "3":
         _render_screen(console, conn, "Guia de comandos")
         panels.print_guide(console)
         _pause(console)
-    elif choice == "4":
-        _render_screen(console, conn, "Caminhos")
-        panels.print_paths(console)
-        _pause(console)
-    elif choice == "5":
+    elif choice == "3":
         config_flow(console, conn)
     else:
         _clear_terminal(console, scrollback=True)
         return False
+    return True
+
+
+def _run_inline_command(console: Console, conn: sqlite3.Connection, raw_command: str) -> bool:
+    parts = raw_command.strip().split()
+    if not parts:
+        return False
+    if parts[0].lower() == "habits":
+        parts = parts[1:]
+    if not parts:
+        return False
+
+    command = parts[0].lower()
+    query = " ".join(parts[1:]).strip()
+    if command in {"check", "registrar"}:
+        _render_screen(console, conn, "Registrar hábito")
+        habit_id = select_habit_by_query(console, conn, query, active=True) if query else None
+        if register_flow(console, conn, habit_id):
+            _pause(console)
+        return True
+    if command in {"hoje", "today"}:
+        _render_screen(console, conn, "Menu do dia")
+        panels.print_today(console, conn)
+        _pause(console)
+        return True
+    if command in {"streak", "sequencia", "sequência"}:
+        _render_screen(console, conn, "Sequências")
+        panels.print_streaks(console, conn)
+        _pause(console)
+        return True
+    if command in {"historico", "histórico", "history"}:
+        _render_screen(console, conn, "Histórico")
+        habit_id = select_habit_by_query(console, conn, query, active=None) if query else None
+        history_flow(console, conn, habit_id, interactive=not bool(habit_id))
+        _pause(console)
+        return True
+    if command in {"db", "banco"}:
+        _render_screen(console, conn, "Banco de dados")
+        panels.print_db(console, conn)
+        _pause(console)
+        return True
+    if command in {"help", "ajuda", "guia", "comandos"}:
+        _render_screen(console, conn, "Guia de comandos")
+        panels.print_guide(console)
+        _pause(console)
+        return True
+    if command in {"paths", "caminhos"}:
+        _render_screen(console, conn, "Caminhos")
+        panels.print_paths(console)
+        _pause(console)
+        return True
+
+    _render_screen(console, conn, "Comando inválido")
+    _empty_state(console, f"Não reconheci o comando: {raw_command}")
+    _pause(console)
     return True
 
 
@@ -478,20 +582,16 @@ def show_menu(console: Console, conn: sqlite3.Connection) -> None:
         if active_habits:
             actions.extend(
                 [
-                    ("today", "Resumo do dia"),
                     ("register", "Registrar hábito"),
+                    ("today", "Menu do dia"),
                     ("streaks", "Sequências"),
                 ]
             )
         actions.append(("manage", "Gerenciar hábitos"))
-        actions.append(("db", "Banco de dados"))
-        if all_habits:
-            actions.append(("history", "Histórico"))
         actions.extend(
             [
                 ("guide", "Guia de comandos"),
                 ("config", "Configurações"),
-                ("paths", "Caminhos"),
                 ("exit", "Sair"),
             ]
         )
@@ -500,39 +600,31 @@ def show_menu(console: Console, conn: sqlite3.Connection) -> None:
 
         _render_screen(console, conn, "Menu principal")
         _print_options_panel(console, [f"{index}. {label}" for index, (_, label) in enumerate(actions, start=1)])
-        choice = _ask_panel_choice(console, choices, default_choice)
+        choice = _ask_panel_choice(console, choices, default_choice, allow_commands=True)
+        if choice not in choices:
+            _run_inline_command(console, conn, choice)
+            continue
         action = actions[int(choice) - 1][0]
         if action == "today":
-            _render_screen(console, conn, "Resumo do dia")
+            _render_screen(console, conn, "Menu do dia")
             panels.print_today(console, conn)
             _pause(console)
         elif action == "register":
             _render_screen(console, conn, "Registrar hábito")
-            register_flow(console, conn)
-            _pause(console)
+            if register_flow(console, conn):
+                _pause(console)
         elif action == "manage":
             manage_flow(console, conn)
         elif action == "streaks":
             _render_screen(console, conn, "Sequências")
             panels.print_streaks(console, conn)
             _pause(console)
-        elif action == "db":
-            _render_screen(console, conn, "Banco de dados")
-            panels.print_db(console, conn)
-            _pause(console)
-        elif action == "history":
-            _render_screen(console, conn, "Histórico")
-            history_flow(console, conn, interactive=True)
         elif action == "guide":
             _render_screen(console, conn, "Guia de comandos")
             panels.print_guide(console)
             _pause(console)
         elif action == "config":
             config_flow(console, conn)
-        elif action == "paths":
-            _render_screen(console, conn, "Caminhos")
-            panels.print_paths(console)
-            _pause(console)
         else:
             _clear_terminal(console, scrollback=True)
             return

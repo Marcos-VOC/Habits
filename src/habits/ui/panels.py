@@ -43,15 +43,15 @@ def print_streaks(console: Console, conn: sqlite3.Connection) -> None:
 
 def print_habits(console: Console, conn: sqlite3.Connection, *, active: bool | None = True) -> None:
     table = Table(title="Hábitos")
-    table.add_column("ID", justify="right")
+    table.add_column("Nº", justify="right")
     table.add_column("Hábito")
     table.add_column("Cor")
     table.add_column("Frequência")
     table.add_column("Meta")
     table.add_column("Sequência", justify="right")
-    for habit in models.list_habits(conn, active=active):
+    for index, habit in enumerate(models.list_habits(conn, active=active), start=1):
         table.add_row(
-            str(habit["id"]),
+            str(index),
             f'{habit["icon"]} {habit["name"]}',
             habit["color"],
             frequency_label(habit["frequency_type"]),
@@ -126,5 +126,7 @@ def print_guide(console: Console) -> None:
     table.add_row("habits historico estudar", "Mostra histórico por hábito")
     table.add_row("habits db | banco", "Mostra dados técnicos do SQLite")
     table.add_row("habits paths | caminhos", "Mostra caminhos de banco/config")
+    table.add_row("Configurações > Caminhos", "Mostra caminhos dentro do menu interativo")
     table.add_row("habits help | ajuda | guia", "Mostra este guia")
+    table.add_row("No menu principal", "Também aceita comandos como habits registrar Correr")
     console.print(table)

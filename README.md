@@ -9,16 +9,16 @@ The user interface is in Portuguese. Internal code, database tables/columns, and
 - Interactive terminal menu with Rich.
 - First-steps menu when no habits exist yet.
 - Dynamic menus that hide actions that cannot be used in the current data state.
-- Create, list, archive, and unarchive habits.
+- Create, list, archive, unarchive, and delete habits.
 - Suggested icons during habit creation, while still allowing any emoji supported by the terminal.
 - Register one entry per habit per day with optional duration and note.
 - Current streaks for daily, weekdays, and weekly habits.
 - Habit-specific history view.
 - Quick commands with Portuguese and English aliases.
 - Direct commands by habit name, such as `habits check treinar`.
-- SQLite technical viewer through `habits db`.
+- SQLite technical viewer through `habits db` or `habits banco`.
 - Command guide through `habits guia`.
-- Paths viewer for database/config locations.
+- Paths are shown directly in the settings menu and through `habits paths`.
 - Local user install/uninstall through `run.sh`.
 
 ## Important Rules
@@ -28,6 +28,8 @@ The user interface is in Portuguese. Internal code, database tables/columns, and
 - `X vezes por semana` accepts a weekly target from 1 to 7.
 - Habits stores at most one entry per habit per date.
 - Confirmations use `S`/`N`.
+- Deleting a habit is permanent and also removes its history.
+- User-facing habit lists use sequential visual numbers; SQLite IDs remain stable internally.
 - Color input is case-insensitive, so `azul`, `Azul`, and `AZUL` resolve to the same color.
 
 ## Install
@@ -73,10 +75,10 @@ habits historico
 habits historico estudar
 habits guia
 habits comandos
-habits db
-habits banco
 habits paths
 habits caminhos
+habits db
+habits banco
 ```
 
 ## Data
@@ -134,7 +136,6 @@ tests/             pytest suite
 ## Roadmap
 
 - Edit habits.
-- Delete habits with strong confirmation.
 - Improve icon selector by category.
 - Add advanced statistics.
 - Add charts.

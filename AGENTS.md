@@ -35,7 +35,7 @@
 - Welcome screen.
 - First-steps menu when no habits exist yet.
 - Dynamic menus for data-state-dependent actions.
-- Create, list, archive, and unarchive habits.
+- Create, list, archive, unarchive, and delete habits.
 - Register one entry per habit per day with optional duration and note.
 - Current streak calculation.
 - Quick commands with PT/EN aliases.
@@ -43,14 +43,13 @@
 - Habit-specific history view.
 - Database viewer for technical inspection.
 - Command guide.
-- Paths viewer.
+- Paths viewer inside settings and as a direct command.
 - Basic config management.
 - Basic tests from the beginning.
 
 ## Deferred
 
 - Edit habits.
-- Delete habits with strong confirmation.
 - Matplotlib charts.
 - GTK 4/libadwaita UI.
 - Advanced alerts.
@@ -77,14 +76,23 @@
 - When the database has no habits at all, the interactive menu should show a reduced first-steps menu with only actions that make sense.
 - Menus should hide actions that are not currently possible when there is a clear data-state reason, such as no active habits or no archived habits.
 - Archiving must have a matching unarchive flow.
+- Deleting a habit is definitive, removes its entries, and must require strong confirmation by exact habit name plus `S`/`N`.
 - Habit-specific history is a user-facing screen; `db` remains a technical/debug view.
 - Habit history in the interactive UI should show selection and result as separate screens; returning from the result goes back to history selection.
+- The main menu should show `Registrar hábito` before `Menu do dia`.
+- Habit history should live under `Gerenciar hábitos`, not as a top-level main-menu option.
+- Paths should be displayed directly inside `Configurações`, not as a selectable option or separate top-level interactive menu option.
+- Database viewer should remain available as a direct technical command, not as a regular interactive menu item.
 - Icon input should show suggested emoji but still accept any short emoji/character the terminal can render.
 - Direct commands may accept habit-name arguments, e.g. `habits check treinar` and `habits historico estudar`.
 - If a direct habit-name search matches multiple habits, the user should choose from the matches.
+- The main menu input may also accept direct command text, e.g. `habits registrar Correr`, not only numeric choices.
 - Confirmations must use Portuguese `S`/`N`, not English `y/n`.
 - Weekly frequency targets must be limited to 1-7 because the current data model stores at most one entry per habit per date.
 - `daily` means one expected completion per calendar day, not multiple occurrences in a day.
 - Color input should be case-insensitive.
 - User-facing validation errors should be Portuguese.
 - Invalid menu choices should not keep stacking prompt boxes; clear/re-render around the warning.
+- Sequential boxed inputs should be transient: after Enter, the active input box disappears and a simple confirmation line remains before the next input appears.
+- In habit creation, boxed inputs such as frequency and weekly target should also be transient; only the current active input keeps a green border.
+- User-facing habit selection should use sequential visual numbers (`Nº`) mapped internally to stable database IDs. Real IDs are technical and should remain visible only in database/debug views.

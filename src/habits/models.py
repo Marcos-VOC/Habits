@@ -126,6 +126,13 @@ def unarchive_habit(conn: sqlite3.Connection, habit_id: int) -> None:
     conn.commit()
 
 
+def delete_habit(conn: sqlite3.Connection, habit_id: int) -> None:
+    get_habit(conn, habit_id)
+    conn.execute("DELETE FROM entries WHERE habit_id = ?", (habit_id,))
+    conn.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
+    conn.commit()
+
+
 def find_habits(conn: sqlite3.Connection, query: str, *, active: bool | None = True) -> list[dict[str, Any]]:
     clean_query = query.strip()
     if not clean_query:

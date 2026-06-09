@@ -67,6 +67,16 @@ def test_habit_history(conn):
     assert history[0]["duration_minutes"] == 45
 
 
+def test_delete_habit_removes_entries(conn):
+    habit = models.create_habit(conn, "Apagar")
+    models.register_entry(conn, habit["id"], entry_date=date(2026, 6, 8))
+
+    models.delete_habit(conn, habit["id"])
+
+    assert models.list_habits(conn, active=None) == []
+    assert models.list_entries(conn) == []
+
+
 def test_parse_duration_formats():
     assert models.parse_duration("") is None
     assert models.parse_duration("90") == 90
