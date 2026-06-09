@@ -32,6 +32,7 @@ A interface do usuário é em português, já o código interno, as tabelas/colu
 - Apagar um hábito é permanente e também remove seu histórico.
 - As listas visuais usam números sequenciais; os IDs reais do SQLite continuam estáveis internamente para evitar bugs.
 - Entrada de cor não diferencia maiúsculas/minúsculas, então `azul`, `Azul` e `AZUL` resolvem para a mesma cor (tal feature ainda não foi 100% polida e implementada, aguardando interface visual).
+- O sistema foi feito e testado no terminal Kitty, mas funciona em demais terminais (pode apresentar instabilidade visual, mas totalmente funcional)
 
 ## Instalação
 
@@ -153,3 +154,5 @@ tests/             suíte pytest
 - Adicionar alertas avançados.
 - Adicionar gráficos.
 - Adicionar interface GTK/libadwaita no futuro.
+- Polimento no fluxo de ações.
+- Compatibilidade com outras distribuições e sistemas.
