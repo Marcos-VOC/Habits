@@ -1,8 +1,8 @@
 # Habits
 
-Habits é um rastreador pessoal de hábitos para terminal, feito para Fedora/Linux com Python, Rich e SQLite.
+Habits é um gerenciador pessoal de hábitos para terminal, feito para Linux Fedora com Python, Rich e SQLite.
 
-A interface do usuário é em português. O código interno, as tabelas/colunas do banco e as chaves de configuração usam nomes em inglês.
+A interface do usuário é em português, já o código interno, as tabelas/colunas do banco e as chaves de configuração usam nomes em inglês, visando estudo da linguagem e aprendizado da norma padrão e boas práticas.
 
 ## Funcionalidades
 
@@ -30,8 +30,8 @@ A interface do usuário é em português. O código interno, as tabelas/colunas 
 - Habits guarda no máximo uma entrada por hábito por data.
 - Confirmações usam `S`/`N`.
 - Apagar um hábito é permanente e também remove seu histórico.
-- As listas visuais usam números sequenciais; os IDs reais do SQLite continuam estáveis internamente.
-- Entrada de cor não diferencia maiúsculas/minúsculas, então `azul`, `Azul` e `AZUL` resolvem para a mesma cor.
+- As listas visuais usam números sequenciais; os IDs reais do SQLite continuam estáveis internamente para evitar bugs.
+- Entrada de cor não diferencia maiúsculas/minúsculas, então `azul`, `Azul` e `AZUL` resolvem para a mesma cor (tal feature ainda não foi 100% polida e implementada, aguardando interface visual).
 
 ## Instalação
 
@@ -129,7 +129,7 @@ Rodar testes:
 ./run.sh test
 ```
 
-Os testes usam caminhos temporários e não tocam nos seus dados reais do Habits.
+Os testes usam caminhos temporários e não tocam nos seus dados reais do Habits, uma vez que um banco de dados exclusivo é criado na máquina após instalação.
 
 ## Estrutura do Projeto
 
