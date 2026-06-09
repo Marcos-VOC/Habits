@@ -1,66 +1,66 @@
 # Habits
 
-Habits is a personal habit tracker for the terminal, built for Fedora/Linux with Python, Rich, and SQLite.
+Habits é um rastreador pessoal de hábitos para terminal, feito para Fedora/Linux com Python, Rich e SQLite.
 
-The user interface is in Portuguese. Internal code, database tables/columns, and config keys use English names.
+A interface do usuário é em português. O código interno, as tabelas/colunas do banco e as chaves de configuração usam nomes em inglês.
 
-## Features
+## Funcionalidades
 
-- Interactive terminal menu with Rich.
-- First-steps menu when no habits exist yet.
-- Dynamic menus that hide actions that cannot be used in the current data state.
-- Create, edit, list, archive, unarchive, and delete habits.
-- Icon picker by category, while still allowing any emoji supported by the terminal.
-- Register one entry per habit per day with optional duration and note.
-- Current streaks for daily, weekdays, and weekly habits.
-- Habit-specific history view.
-- Backup/export flow in settings, with complete backup, JSON export, and CSV export.
-- Quick commands with Portuguese and English aliases.
-- Direct commands by habit name, such as `habits check treinar`.
-- SQLite technical viewer through `habits db` or `habits banco`.
-- Command guide through `habits guia`.
-- Paths are shown directly in the settings menu and through `habits paths`.
-- Local user install/uninstall through `run.sh`.
+- Menu interativo no terminal com Rich.
+- Menu de primeiros passos quando ainda não existe nenhum hábito.
+- Menus dinâmicos que escondem ações impossíveis no estado atual dos dados.
+- Criar, editar, listar, arquivar, desarquivar e apagar hábitos.
+- Seletor de ícones por categoria, ainda permitindo qualquer emoji suportado pelo terminal.
+- Registro de uma entrada por hábito por dia, com duração e nota opcionais.
+- Cálculo de sequências atuais para hábitos diários, de segunda a sexta e semanais.
+- Histórico por hábito.
+- Backup/exportação em Configurações, com backup completo, exportação JSON e exportação CSV.
+- Comandos rápidos com aliases em português e inglês.
+- Comandos diretos por nome do hábito, como `habits check treinar`.
+- Visualização técnica do SQLite por `habits db` ou `habits banco`.
+- Guia de comandos por `habits guia`.
+- Caminhos exibidos diretamente no menu de configurações e por `habits paths`.
+- Instalação/desinstalação local do usuário por `run.sh`.
 
-## Important Rules
+## Regras Importantes
 
-- `Todos os dias` means one expected completion per calendar day.
-- `Segunda a sexta` ignores Saturday and Sunday for streak calculation.
-- `X vezes por semana` accepts a weekly target from 1 to 7.
-- Habits stores at most one entry per habit per date.
-- Confirmations use `S`/`N`.
-- Deleting a habit is permanent and also removes its history.
-- User-facing habit lists use sequential visual numbers; SQLite IDs remain stable internally.
-- Color input is case-insensitive, so `azul`, `Azul`, and `AZUL` resolve to the same color.
+- `Todos os dias` significa uma conclusão esperada por dia de calendário.
+- `Segunda a sexta` ignora sábado e domingo no cálculo de sequência.
+- `X vezes por semana` aceita uma meta semanal de 1 a 7.
+- Habits guarda no máximo uma entrada por hábito por data.
+- Confirmações usam `S`/`N`.
+- Apagar um hábito é permanente e também remove seu histórico.
+- As listas visuais usam números sequenciais; os IDs reais do SQLite continuam estáveis internamente.
+- Entrada de cor não diferencia maiúsculas/minúsculas, então `azul`, `Azul` e `AZUL` resolvem para a mesma cor.
 
-## Install
+## Instalação
 
 ```bash
 ./run.sh install
 ```
 
-This installs the `habits` command for the current user at:
+Isso instala o comando `habits` para o usuário atual em:
 
 ```text
 ~/.local/bin/habits
 ```
 
-Uninstall asks whether to keep or remove user data:
+A desinstalação pergunta se deve manter ou remover os dados do usuário:
 
 ```bash
 ./run.sh uninstall
 ```
 
-## Run
+## Execução
 
-During development, you can run without installing:
+Durante o desenvolvimento, é possível rodar sem instalar:
 
 ```bash
 ./run.sh
 ./run.sh hoje
 ```
 
-After installing:
+Depois de instalar:
 
 ```bash
 habits
@@ -82,74 +82,74 @@ habits db
 habits banco
 ```
 
-## Data
+## Dados
 
-Habits stores user data in standard Linux user directories:
+Habits guarda os dados do usuário em diretórios padrão do Linux:
 
 ```text
 ~/.local/share/habits/habits.db
 ~/.config/habits/config.json
 ```
 
-Tests and development may override those paths:
+Testes e desenvolvimento podem sobrescrever esses caminhos:
 
 ```bash
 HABITS_DB_PATH=/tmp/habits-test.db HABITS_CONFIG_PATH=/tmp/habits-config.json ./run.sh
 ```
 
-Backups and exports are saved by default under:
+Backups e exportações são salvos por padrão em:
 
 ```text
 ~/Downloads/habits-backups/
 ```
 
-Tests and development may override that directory:
+Testes e desenvolvimento podem sobrescrever esse diretório:
 
 ```bash
 HABITS_BACKUP_DIR=/tmp/habits-backups ./run.sh
 ```
 
-## Development
+## Desenvolvimento
 
-Runtime dependency:
+Dependência de execução:
 
 ```text
 rich
 ```
 
-Development/test dependency:
+Dependência de desenvolvimento/testes:
 
 ```text
 pytest
 ```
 
-Run tests:
+Rodar testes:
 
 ```bash
 ./run.sh test
 ```
 
-Tests use temporary paths and do not touch your real Habits data.
+Os testes usam caminhos temporários e não tocam nos seus dados reais do Habits.
 
-## Project Layout
+## Estrutura do Projeto
 
 ```text
 src/habits/
-  main.py          CLI routing
-  db.py            SQLite connection and schema
-  models.py        CRUD and data access
-  stats.py         streak calculations
-  backup.py        backup and export helpers
-  config.py        user config
-  palette.py       color palette
-  paths.py         data/config paths
-  ui/              Rich terminal UI
-tests/             pytest suite
+  main.py          roteamento da CLI
+  db.py            conexão e schema do SQLite
+  models.py        CRUD e acesso aos dados
+  stats.py         cálculo de sequências
+  backup.py        auxiliares de backup e exportação
+  config.py        configuração do usuário
+  palette.py       paleta de cores
+  paths.py         caminhos de dados/configuração
+  ui/              interface de terminal com Rich
+tests/             suíte pytest
 ```
 
 ## Roadmap
 
-- Add advanced statistics.
-- Add advanced alerts.
-- Add charts.
-- Add GTK/libadwaita UI later.
+- Adicionar estatísticas avançadas.
+- Adicionar alertas avançados.
+- Adicionar gráficos.
+- Adicionar interface GTK/libadwaita no futuro.

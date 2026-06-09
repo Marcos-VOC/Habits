@@ -1,110 +1,110 @@
-# Habits - Project Context
+# Habits - Contexto do Projeto
 
-## Product
+## Produto
 
-- Project/product name: Habits.
-- Main command: `habits`.
-- User interface language: Portuguese.
-- Internal code, database tables/columns, and config keys: English.
-- CLI supports Portuguese and English aliases for subcommands.
+- Nome do projeto/produto: Habits.
+- Comando principal: `habits`.
+- Idioma da interface do usuário: português.
+- Código interno, tabelas/colunas do banco e chaves de configuração: inglês.
+- A CLI aceita aliases em português e inglês para subcomandos.
 
-## Target
+## Alvo
 
-- Fedora Linux with GNOME.
-- Python 3 terminal app using Rich.
-- SQLite via Python standard library `sqlite3`.
-- Offline at runtime, no sudo, no background processes.
+- Fedora Linux com GNOME.
+- Aplicativo de terminal em Python 3 usando Rich.
+- SQLite via biblioteca padrão `sqlite3` do Python.
+- Execução offline, sem sudo e sem processos em segundo plano.
 
-## Data Locations
+## Locais dos Dados
 
-- User database: `~/.local/share/habits/habits.db`.
-- User config: `~/.config/habits/config.json`.
-- Tests and development may override paths with:
+- Banco do usuário: `~/.local/share/habits/habits.db`.
+- Configuração do usuário: `~/.config/habits/config.json`.
+- Testes e desenvolvimento podem sobrescrever caminhos com:
   - `HABITS_DB_PATH`
   - `HABITS_CONFIG_PATH`
 
-## Install/Uninstall
+## Instalação/Desinstalação
 
-- `./run.sh install` installs the app for the current user.
-- `./run.sh uninstall` removes the user command and asks whether to keep or remove user data.
-- Reinstalling must reuse existing user data when kept.
+- `./run.sh install` instala o app para o usuário atual.
+- `./run.sh uninstall` remove o comando do usuário e pergunta se deve manter ou remover os dados.
+- Reinstalar deve reutilizar os dados existentes quando eles forem mantidos.
 
-## v0.1 Scope
+## Escopo da v0.1
 
-- Rich CLI and interactive menu.
-- Welcome screen.
-- First-steps menu when no habits exist yet.
-- Dynamic menus for data-state-dependent actions.
-- Create, list, archive, unarchive, and delete habits.
-- Register one entry per habit per day with optional duration and note.
-- Current streak calculation.
-- Quick commands with PT/EN aliases.
-- Direct commands by habit name.
-- Habit-specific history view.
-- Database viewer for technical inspection.
-- Command guide.
-- Paths viewer inside settings and as a direct command.
-- Basic config management.
-- Basic tests from the beginning.
+- CLI com Rich e menu interativo.
+- Tela de boas-vindas.
+- Menu de primeiros passos quando ainda não existe nenhum hábito.
+- Menus dinâmicos para ações dependentes do estado dos dados.
+- Criar, listar, arquivar, desarquivar e apagar hábitos.
+- Registrar uma entrada por hábito por dia, com duração e nota opcionais.
+- Cálculo de sequência atual.
+- Comandos rápidos com aliases PT/EN.
+- Comandos diretos por nome do hábito.
+- Histórico por hábito.
+- Visualizador do banco para inspeção técnica.
+- Guia de comandos.
+- Visualizador de caminhos dentro de Configurações e como comando direto.
+- Gerenciamento básico de configuração.
+- Testes básicos desde o começo.
 
-## v0.2 Scope
+## Escopo da v0.2
 
-- Edit habit name, icon, color, frequency, and daily goal from the interactive manager.
-- Icon picker organized by numbered categories, with manual emoji entry still available.
-- Backup/export flow inside settings:
-  - Complete backup copies the database and config.
-  - JSON export includes config, habits, and entries.
-  - CSV export writes `habits.csv` and `entries.csv`.
-- Backup/export files default to `~/Downloads/habits-backups/`.
-- Tests and development may override backup/export output with `HABITS_BACKUP_DIR`.
+- Editar nome, ícone, cor, frequência e meta diária de um hábito pelo gerenciador interativo.
+- Seletor de ícones organizado por categorias numeradas, com entrada manual de emoji ainda disponível.
+- Fluxo de backup/exportação dentro de Configurações:
+  - Backup completo copia banco e configuração.
+  - Exportação JSON inclui configuração, hábitos e entradas.
+  - Exportação CSV escreve `habits.csv` e `entries.csv`.
+- Arquivos de backup/exportação vão por padrão para `~/Downloads/habits-backups/`.
+- Testes e desenvolvimento podem sobrescrever o destino de backup/exportação com `HABITS_BACKUP_DIR`.
 
-## Deferred
+## Adiado
 
-- Matplotlib charts.
-- GTK 4/libadwaita UI.
-- Advanced alerts.
-- Advanced statistics.
+- Gráficos com Matplotlib.
+- Interface GTK 4/libadwaita.
+- Alertas avançados.
+- Estatísticas avançadas.
 
-## Behavior Decisions
+## Decisões de Comportamento
 
-- Week starts on Monday and ends on Sunday.
-- `weekdays` means Monday to Friday only.
-- Saturday and Sunday are valid for daily and weekly-frequency habits.
-- If an entry already exists for today, the app asks whether to update it.
-- Archiving a habit never deletes its history.
-- Terminal screens should clear before rendering new menu content.
-- The Habits banner should appear on all interactive menu screens, not only the home screen.
-- The banner must degrade gracefully on narrower terminal widths.
-- User-facing frequency labels must be in Portuguese.
-- Empty habit ID prompts should cancel and return toward the main menu.
-- The config should not include a greeting toggle.
-- Empty or invalid user input must be handled with friendly messages, never raw tracebacks.
-- Pause/return prompts should use the same bordered input style as menu choices.
-- Empty dependent screens should render a friendly warning and a bordered Enter-to-return prompt.
-- When the database has no habits at all, the interactive menu should show a reduced first-steps menu with only actions that make sense.
-- Menus should hide actions that are not currently possible when there is a clear data-state reason, such as no active habits or no archived habits.
-- Archiving must have a matching unarchive flow.
-- Deleting a habit is definitive, removes its entries, and must require strong confirmation by exact habit name plus `S`/`N`.
-- Habit-specific history is a user-facing screen; `db` remains a technical/debug view.
-- Habit history in the interactive UI should show selection and result as separate screens; returning from the result goes back to history selection.
-- The main menu should show `Registrar hábito` before `Menu do dia`.
-- Habit history should live under `Gerenciar hábitos`, not as a top-level main-menu option.
-- Paths should be displayed directly inside `Configurações`, not as a selectable option or separate top-level interactive menu option.
-- Database viewer should remain available as a direct technical command, not as a regular interactive menu item.
-- Icon input should show suggested emoji but still accept any short emoji/character the terminal can render.
-- Direct commands may accept habit-name arguments, e.g. `habits check treinar` and `habits historico estudar`.
-- If a direct habit-name search matches multiple habits, the user should choose from the matches.
-- The main menu input may also accept direct command text, e.g. `habits registrar Correr`, not only numeric choices.
-- Confirmations must use Portuguese `S`/`N`, not English `y/n`.
-- Weekly frequency targets must be limited to 1-7 because the current data model stores at most one entry per habit per date.
-- `daily` means one expected completion per calendar day, not multiple occurrences in a day.
-- Color input should be case-insensitive.
-- User-facing validation errors should be Portuguese.
-- Invalid menu choices should not keep stacking prompt boxes; clear/re-render around the warning.
-- Sequential boxed inputs should be transient: after Enter, the active input box disappears and a simple confirmation line remains before the next input appears.
-- In habit creation, boxed inputs such as frequency and weekly target should also be transient; only the current active input keeps a green border.
-- User-facing habit selection should use sequential visual numbers (`Nº`) mapped internally to stable database IDs. Real IDs are technical and should remain visible only in database/debug views.
-- Editing a habit changes future presentation and rules, but does not rewrite old entries.
-- Editing a frequency should ask for a new weekly target only when the new frequency is `weekly`.
-- Empty daily goal during editing means the daily goal should be removed.
-- Backup/export belongs inside settings, while the paths table remains visible directly on the settings screen.
+- A semana começa na segunda-feira e termina no domingo.
+- `weekdays` significa segunda a sexta.
+- Sábado e domingo são válidos para hábitos diários e semanais.
+- Se uma entrada já existe para hoje, o app pergunta se deve atualizá-la.
+- Arquivar um hábito nunca apaga seu histórico.
+- Telas do terminal devem limpar antes de renderizar novo conteúdo de menu.
+- O banner do Habits deve aparecer em todas as telas interativas de menu, não apenas na tela inicial.
+- O banner deve degradar bem em larguras menores de terminal.
+- Labels de frequência exibidas ao usuário devem ficar em português.
+- Campo vazio em prompt de ID/número de hábito deve cancelar e voltar em direção ao menu principal.
+- A configuração não deve incluir opção de saudação.
+- Entrada vazia ou inválida do usuário deve ser tratada com mensagens amigáveis, nunca com traceback cru.
+- Prompts de pausa/retorno devem usar o mesmo estilo de input com borda das escolhas de menu.
+- Telas dependentes vazias devem renderizar um aviso amigável e um prompt com borda para pressionar Enter e voltar.
+- Quando o banco não tem nenhum hábito, o menu interativo deve mostrar um menu reduzido de primeiros passos apenas com ações que fazem sentido.
+- Menus devem esconder ações impossíveis quando existe um motivo claro no estado dos dados, como não haver hábitos ativos ou arquivados.
+- Arquivar deve ter fluxo correspondente para desarquivar.
+- Apagar um hábito é definitivo, remove suas entradas e exige confirmação forte pelo nome exato do hábito mais `S`/`N`.
+- Histórico por hábito é uma tela de usuário; `db` continua sendo uma visão técnica/debug.
+- Histórico por hábito na UI interativa deve separar tela de seleção e tela de resultado; ao sair do resultado, volta para a seleção de histórico.
+- O menu principal deve mostrar `Registrar hábito` antes de `Menu do dia`.
+- Histórico de hábito deve ficar dentro de `Gerenciar hábitos`, não como opção de topo no menu principal.
+- Caminhos devem aparecer diretamente em `Configurações`, não como opção selecionável ou item separado de topo no menu interativo.
+- Visualizador do banco deve continuar disponível como comando técnico direto, não como item regular do menu interativo.
+- Entrada de ícone deve oferecer categorias numeradas, mas ainda aceitar qualquer emoji/caractere curto que o terminal renderize.
+- Comandos diretos podem aceitar argumentos por nome do hábito, por exemplo `habits check treinar` e `habits historico estudar`.
+- Se uma busca direta por nome encontrar vários hábitos, o usuário deve escolher entre os resultados.
+- O input do menu principal também pode aceitar comando direto, por exemplo `habits registrar Correr`, não apenas escolhas numéricas.
+- Confirmações devem usar `S`/`N` em português, não `y/n`.
+- Metas de frequência semanal devem ficar limitadas a 1-7, porque o modelo atual guarda no máximo uma entrada por hábito por data.
+- `daily` significa uma conclusão esperada por dia de calendário, não várias ocorrências no mesmo dia.
+- Entrada de cor deve ignorar maiúsculas/minúsculas.
+- Mensagens de validação visíveis ao usuário devem ficar em português.
+- Escolhas inválidas de menu não devem empilhar caixas de prompt; a tela deve limpar/re-renderizar em volta do aviso.
+- Inputs encaixotados sequenciais devem ser transitórios: após Enter, a caixa ativa desaparece e fica uma linha simples de confirmação antes do próximo input.
+- Na criação de hábito, inputs encaixotados como frequência e meta semanal também devem ser transitórios; apenas o input ativo atual mantém borda verde.
+- Seleção de hábito visível ao usuário deve usar números visuais sequenciais (`Nº`) mapeados internamente para IDs estáveis do banco. IDs reais devem aparecer apenas em visões técnicas/debug.
+- Editar um hábito altera apresentação e regras futuras, mas não reescreve entradas antigas.
+- Editar frequência deve pedir nova meta semanal apenas quando a nova frequência for `weekly`.
+- Meta diária vazia durante edição significa remover a meta diária.
+- Backup/exportação pertence a Configurações, enquanto a tabela de caminhos continua visível diretamente na tela de Configurações.
